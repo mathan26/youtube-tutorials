@@ -12,7 +12,6 @@ const ProductSearch = () => {
             const response = await axios.get(
                 `https://dummyjson.com/products/search?q=${searchValue}`
             );
-            console.log(response.data);
             setData(response.data.products);
         };
         getSearchResults();

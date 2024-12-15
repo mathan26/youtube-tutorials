@@ -4,7 +4,6 @@ import { Outlet, useNavigation } from 'react-router';
 
 const MainLayout = () => {
     const navigation = useNavigation();
-    console.log(navigation);
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />

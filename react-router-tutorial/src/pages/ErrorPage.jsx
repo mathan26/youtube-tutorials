@@ -5,9 +5,6 @@ const ErrorPage = () => {
   const { data, status, statusText } = useRouteError();
   const navigate = useNavigate();
 
-  console.log(data);
-  console.log(status);
-  console.log(statusText);
   return (
     <div className="flex flex-col justify-center items-center w-full min-h-screen">
       <h1>Oops! Something went wrong..</h1>

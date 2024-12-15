@@ -3,7 +3,6 @@ import { useCart } from '../../context/CartContext.jsx';
 
 const Cart = () => {
     const { state } = useCart();
-    console.log(state);
     return (
         <div>
             <h1 className="text-2xl font-bold mb-4">Your Cart</h1>

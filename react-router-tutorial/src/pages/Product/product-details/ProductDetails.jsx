@@ -7,7 +7,6 @@ import { useCart } from "../../../context/CartContext.jsx";
 const ProductDetails = () => {
   const product = useLoaderData();
   const { state, setCart } = useCart();
-  console.log(state);
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-12 px-4">
