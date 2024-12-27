@@ -1,9 +1,20 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
+interface UserProps {
+  name: string;
+  email: string;
+}
+
+interface initialStateProps {
+  user: Partial<UserProps>;
+  loading: boolean;
+  error: string;
+}
+
+const initialState: initialStateProps = {
   user: {},
   loading: false,
-  error: null,
+  error: "",
 };
 
 export const fetchUser = createAsyncThunk("user/fetchUser", async () => {
@@ -13,7 +24,8 @@ export const fetchUser = createAsyncThunk("user/fetchUser", async () => {
       throw new Error("failed to fetch user");
     }
     return await response.json();
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
     return error.message;
   }
 });
@@ -24,9 +36,9 @@ export const userSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchUser.pending, (state, action) => {
+      .addCase(fetchUser.pending, (state) => {
         state.loading = true;
-        state.error = null;
+        state.error = "";
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.user = action.payload;
@@ -34,7 +46,7 @@ export const userSlice = createSlice({
       })
       .addCase(fetchUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload as string;
       });
   },
 });

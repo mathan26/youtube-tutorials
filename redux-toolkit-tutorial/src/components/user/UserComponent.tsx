@@ -6,7 +6,7 @@ import { fetchUser } from "./userSlice";
 const UserComponent = () => {
   const dispatch: AppDispatch = useDispatch();
 
-  const { user, loading, error } = useSelector((state: RootState) => state.user);
+  const { user, loading } = useSelector((state: RootState) => state.user);
 
   const counterValue = useSelector((state: RootState) => state.counter.value);
 
