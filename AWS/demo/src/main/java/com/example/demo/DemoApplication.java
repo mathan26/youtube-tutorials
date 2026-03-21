@@ -1,13 +1,13 @@
-package com.tech.mathan.aws.aws_rds_demo;
+package com.example.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AwsRdsDemoApplication {
+public class DemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AwsRdsDemoApplication.class, args);
+		SpringApplication.run(DemoApplication.class, args);
 	}
 
 }

@@ -1,10 +1,10 @@
-package com.tech.mathan.aws.aws_rds_demo;
+package com.example.demo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AwsRdsDemoApplicationTests {
+class DemoApplicationTests {
 
 	@Test
 	void contextLoads() {
