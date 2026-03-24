@@ -1,0 +1,142 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Employee CRUD API",
+		"description": "Postman collection for Employee CRUD operations connected to AWS RDS PostgreSQL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Create Employee",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"department\": \"Engineering\",\n    \"salary\": 85000.00\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/employees",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees"]
+				},
+				"description": "Create a new employee record"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Employee 2",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"email\": \"jane.smith@example.com\",\n    \"department\": \"Marketing\",\n    \"salary\": 75000.00\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/employees",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees"]
+				},
+				"description": "Create a second employee record"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Employees",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/employees",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees"]
+				},
+				"description": "Retrieve all employee records"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Employee By ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/employees/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees", "1"]
+				},
+				"description": "Retrieve a single employee by their ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Employee",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john.doe.updated@example.com\",\n    \"department\": \"Senior Engineering\",\n    \"salary\": 105000.00\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/employees/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees", "1"]
+				},
+				"description": "Update an existing employee by their ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Employee",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/employees/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees", "1"]
+				},
+				"description": "Delete an employee by their ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Non-Existent Employee (404 Test)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/employees/999",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "employees", "999"]
+				},
+				"description": "Test 404 error handling by requesting a non-existent employee"
+			},
+			"response": []
+		}
+	]
+}
