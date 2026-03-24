@@ -1,1 +1,25 @@
 /core-java/java-8-guide/.idea/
+
+# Executables
+*.exe
+*.msi
+*.dmg
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build
+target/
+build/
+*.class
+*.jar
+*.war
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
