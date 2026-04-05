@@ -1,0 +1,39 @@
+{
+  "info": {
+    "name": "SQS Spring Boot Demo API",
+    "description": "Collection to test the SQS Spring Boot Demo Application endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"customerId\": \"CUST-10042\",\n    \"amount\": 250.50\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/orders",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

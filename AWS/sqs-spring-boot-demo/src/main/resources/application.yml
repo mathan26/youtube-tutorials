@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+logging:
+  file:
+    name: C:/logs/order-service/app.log
+
+spring:
+  application:
+    name: order-service
+
+aws:
+  region: ${AWS_REGION:ap-south-1}
+  access-key: ${AWS_ACCESS_KEY:ENTER_YOUR_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY: ENTER_YOUR_SECERT_KEY}
+
+app:
+  sqs:
+    queue-url: ${SQS_QUEUE_URL:ENTER_YOUR_QUEUE_URL}
