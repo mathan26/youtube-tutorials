@@ -1,0 +1,233 @@
+{
+	"info": {
+		"_postman_id": "spring-log-monitoring-collection",
+		"name": "Spring Log Monitoring",
+		"description": "Postman collection for testing Spring Boot Log Monitoring API with AWS CloudWatch integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Log Message (Generic)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"level\": \"INFO\",\n    \"message\": \"This is a test log message from Postman\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/logs",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs"]
+				},
+				"description": "Log a message with a specified level (INFO, WARN, ERROR, DEBUG, TRACE)"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Log INFO Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": \"Application started successfully\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/logs/info",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs", "info"]
+				},
+				"description": "Log an INFO level message"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Log WARN Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": \"High memory usage detected: 85%\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/logs/warn",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs", "warn"]
+				},
+				"description": "Log a WARN level message"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Log ERROR Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\": \"Database connection failed: timeout after 30s\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/logs/error",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs", "error"]
+				},
+				"description": "Log an ERROR level message"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Get Recent Logs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/logs?limit=50",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "50",
+							"description": "Number of recent logs to retrieve (1-500, default: 50)"
+						}
+					]
+				},
+				"description": "Get recent logs with optional limit. Returns logs in reverse chronological order."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Get Recent Logs (Filtered by Level)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/logs?level=ERROR&limit=20",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs"],
+					"query": [
+						{
+							"key": "level",
+							"value": "ERROR",
+							"description": "Filter by log level (INFO, WARN, ERROR, DEBUG)"
+						},
+						{
+							"key": "limit",
+							"value": "20",
+							"description": "Number of results to return"
+						}
+					]
+				},
+				"description": "Get recent logs filtered by level"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Get Log Counts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/logs/count",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs", "count"]
+				},
+				"description": "Get count of logs by level (INFO, WARN, ERROR, DEBUG, TOTAL)"
+			},
+			"response": []
+		},
+		{
+			"name": "8. Get Error Logs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/logs/errors?limit=20",
+					"host": ["{{base_url}}"],
+					"path": ["api", "logs", "errors"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "20",
+							"description": "Number of error logs to retrieve (1-500, default: 20)"
+						}
+					]
+				},
+				"description": "Get recent ERROR level logs"
+			},
+			"response": []
+		},
+		{
+			"name": "9. Health Check (Actuator)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/health",
+					"host": ["{{base_url}}"],
+					"path": ["actuator", "health"]
+				},
+				"description": "Spring Boot Actuator health endpoint"
+			},
+			"response": []
+		},
+		{
+			"name": "10. Application Info (Actuator)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/info",
+					"host": ["{{base_url}}"],
+					"path": ["actuator", "info"]
+				},
+				"description": "Spring Boot Actuator info endpoint"
+			},
+			"response": []
+		},
+		{
+			"name": "11. Application Metrics (Actuator)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/actuator/metrics",
+					"host": ["{{base_url}}"],
+					"path": ["actuator", "metrics"]
+				},
+				"description": "Spring Boot Actuator metrics endpoint"
+			},
+			"response": []
+		}
+	]
+}

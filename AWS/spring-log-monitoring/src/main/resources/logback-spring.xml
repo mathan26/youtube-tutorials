@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="spring-log-monitoring"/>
+    <springProperty scope="context" name="awsRegion" source="aws.cloudwatch.region" defaultValue="us-east-1"/>
+    <springProperty scope="context" name="logGroup" source="aws.cloudwatch.log-group" defaultValue="spring-log-monitoring"/>
+    <springProperty scope="context" name="awsLogsEnabled" source="awslogs.enabled" defaultValue="true"/>
+
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CLOUDWATCH" class="com.tech.mathan.spring_log_monitoring.logging.ConditionalAwsLogsAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <logGroupName>${logGroup}</logGroupName>
+        <logStreamUuidPrefix>${appName}-</logStreamUuidPrefix>
+        <logRegion>${awsRegion}</logRegion>
+        <maxBatchLogEvents>50</maxBatchLogEvents>
+        <maxFlushTimeMillis>30000</maxFlushTimeMillis>
+        <maxBlockTimeMillis>5000</maxBlockTimeMillis>
+        <retentionTimeDays>30</retentionTimeDays>
+    </appender>
+
+    <appender name="ASYNC_CLOUDWATCH" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="CLOUDWATCH"/>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_CLOUDWATCH"/>
+    </root>
+
+    <logger name="com.tech.mathan.spring_log_monitoring" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_CLOUDWATCH"/>
+    </logger>
+
+</configuration>
