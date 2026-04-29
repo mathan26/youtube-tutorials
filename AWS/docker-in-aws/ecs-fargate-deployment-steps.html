@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECS Fargate Deployment Steps</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@500;700&display=swap");
+
+    :root {
+      --ink: #0f172a;
+      --muted: #4b5563;
+      --paper: #f7fafc;
+      --panel: #ffffff;
+      --line: #d1d5db;
+      --accent: #ea580c;
+      --accent-2: #0f766e;
+      --accent-3: #2563eb;
+      --warn: #b45309;
+      --radius: 14px;
+      --shadow: 0 22px 52px rgba(15, 23, 42, 0.14);
+    }
+
+    [data-theme="dark"] {
+      --ink: #e2e8f0;
+      --muted: #93a4bc;
+      --paper: #020817;
+      --panel: #0f172a;
+      --line: #334155;
+      --accent: #fb923c;
+      --accent-2: #2dd4bf;
+      --accent-3: #60a5fa;
+      --warn: #f59e0b;
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background:
+        radial-gradient(1100px 700px at 10% -10%, rgba(234, 88, 12, 0.14), transparent 58%),
+        radial-gradient(900px 600px at 90% 0%, rgba(15, 118, 110, 0.12), transparent 56%),
+        var(--paper);
+      font-family: "Manrope", "Trebuchet MS", sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .deck {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    .slides {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(36px);
+      transition: transform 250ms ease, opacity 250ms ease;
+      padding: clamp(20px, 4vw, 52px);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .slide-shell {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(209, 213, 219, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(20px, 3.2vw, 40px);
+      backdrop-filter: blur(4px);
+    }
+
+    .kicker {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.15;
+      font-family: "Sora", "Gill Sans", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+    }
+
+    h2 {
+      font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+    }
+
+    .title-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title-chip {
+      width: 36px;
+      height: 36px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #ffffff;
+      background: linear-gradient(140deg, var(--accent), var(--accent-3));
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+      flex: 0 0 36px;
+    }
+
+    .icon {
+      width: 1.08em;
+      height: 1.08em;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2;
+      vertical-align: -0.16em;
+      flex: 0 0 auto;
+    }
+
+    .icon.solid {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .icon.small {
+      width: 0.9em;
+      height: 0.9em;
+      vertical-align: -0.08em;
+      margin-right: 6px;
+    }
+
+    p {
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: clamp(0.98rem, 1.35vw, 1.12rem);
+      line-height: 1.6;
+    }
+
+    .mono-flow {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fffdf8;
+      font-family: "Courier New", monospace;
+      font-size: clamp(0.92rem, 1.35vw, 1.04rem);
+      line-height: 1.8;
+      color: #1f2937;
+      white-space: pre-wrap;
+    }
+
+    .flow-wrap {
+      margin-top: 14px;
+      border-radius: 12px;
+      border: 1px solid #dbe4f0;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .flow-svg {
+      width: 100%;
+      min-width: 880px;
+      height: auto;
+      display: block;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .box h3 {
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #fff4eb;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+      margin-right: 6px;
+      margin-top: 6px;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 14px;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #e5e7eb;
+      overflow-x: auto;
+      border: 1px solid #1f2937;
+      font-size: 0.93rem;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: "Courier New", monospace;
+    }
+
+    .note {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--warn);
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      border: 1px solid #dbe1ea;
+      border-radius: 10px;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+
+    .table th,
+    .table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+      font-size: 0.95rem;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .table th:last-child,
+    .table td:last-child {
+      border-right: 0;
+    }
+
+    .table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .table th {
+      background: #f8fafc;
+      font-family: "Sora", "Gill Sans", sans-serif;
+      color: #1e293b;
+      font-weight: 700;
+    }
+
+    .list {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .list li + li {
+      margin-top: 6px;
+    }
+
+    .inline-code {
+      display: inline-block;
+      font-family: "Courier New", monospace;
+      background: #f3f4f6;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+    }
+
+    .links {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #334155;
+      word-break: break-word;
+    }
+
+    .links a {
+      color: #1d4ed8;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px clamp(12px, 2.6vw, 24px) 16px;
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(4px);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 12px;
+      min-width: 74px;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn .icon {
+      margin-right: 6px;
+    }
+
+    .icon-btn {
+      min-width: 96px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 0.93rem;
+      color: #334155;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .progress-track {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-3));
+      transition: width 220ms ease;
+    }
+
+    .sprite-defs {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(1100px 700px at 10% -10%, rgba(251, 146, 60, 0.24), transparent 60%),
+        radial-gradient(900px 600px at 90% 0%, rgba(45, 212, 191, 0.2), transparent 58%),
+        var(--paper);
+    }
+
+    [data-theme="dark"] .slide-shell {
+      background: rgba(15, 23, 42, 0.82);
+      border-color: rgba(71, 85, 105, 0.8);
+      backdrop-filter: blur(7px);
+    }
+
+    [data-theme="dark"] .mono-flow {
+      border-color: #334155;
+      background: #111827;
+      color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .flow-wrap {
+      border-color: #334155;
+      background: linear-gradient(180deg, #0b1222, #0f172a);
+    }
+
+    [data-theme="dark"] .box {
+      background: #0b1324;
+      border-color: #334155;
+    }
+
+    [data-theme="dark"] .pill {
+      background: #2a1a0b;
+      border-color: #8f4a10;
+      color: #fdba74;
+    }
+
+    [data-theme="dark"] pre {
+      background: #020617;
+      border-color: #334155;
+      color: #dbeafe;
+    }
+
+    [data-theme="dark"] .note {
+      background: #2a1a0b;
+      color: #fed7aa;
+      border-left-color: #f59e0b;
+    }
+
+    [data-theme="dark"] .table {
+      border-color: #334155;
+    }
+
+    [data-theme="dark"] .table th,
+    [data-theme="dark"] .table td {
+      border-color: #334155;
+      color: #dbe5f4;
+    }
+
+    [data-theme="dark"] .table th {
+      background: #111827;
+    }
+
+    [data-theme="dark"] .inline-code {
+      background: #0b1222;
+      border-color: #334155;
+      color: #dbeafe;
+    }
+
+    [data-theme="dark"] .links {
+      color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .links a {
+      color: #93c5fd;
+    }
+
+    [data-theme="dark"] .controls {
+      border-top-color: rgba(100, 116, 139, 0.35);
+      background: rgba(2, 6, 23, 0.86);
+    }
+
+    [data-theme="dark"] .btn {
+      border-color: #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .btn:hover:not(:disabled) {
+      border-color: #475569;
+      background: #111f37;
+    }
+
+    [data-theme="dark"] .status {
+      color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .progress-track {
+      background: #1e293b;
+    }
+
+    [data-theme="dark"] .list {
+      color: #dbe5f4;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .slide {
+        padding: 12px;
+      }
+
+      .slide-shell {
+        padding: 16px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        order: 3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sprite-defs" aria-hidden="true" focusable="false">
+    <symbol id="i-cloud" viewBox="0 0 24 24">
+      <path d="M7 18h10a4 4 0 0 0 0-8h-.5A6.5 6.5 0 0 0 4.2 9.2 3.8 3.8 0 0 0 7 18Z" />
+    </symbol>
+    <symbol id="i-box" viewBox="0 0 24 24">
+      <path d="M3 8 12 3l9 5-9 5-9-5Z" />
+      <path d="M3 8v8l9 5 9-5V8" />
+      <path d="M12 13v8" />
+    </symbol>
+    <symbol id="i-db" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="5.5" rx="7.5" ry="3.5" />
+      <path d="M4.5 5.5v6c0 1.9 3.4 3.5 7.5 3.5s7.5-1.6 7.5-3.5v-6" />
+      <path d="M4.5 11.5v6c0 1.9 3.4 3.5 7.5 3.5s7.5-1.6 7.5-3.5v-6" />
+    </symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1.4" />
+      <rect x="14" y="3" width="7" height="7" rx="1.4" />
+      <rect x="3" y="14" width="7" height="7" rx="1.4" />
+      <rect x="14" y="14" width="7" height="7" rx="1.4" />
+    </symbol>
+    <symbol id="i-ship" viewBox="0 0 24 24">
+      <path d="M4 15h16l-2 5H6l-2-5Z" />
+      <path d="M7 15V9h10v6" />
+      <path d="M10 9V6h4v3" />
+    </symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+    </symbol>
+    <symbol id="i-key" viewBox="0 0 24 24">
+      <circle cx="8" cy="12" r="3.2" />
+      <path d="M11.2 12H21" />
+      <path d="M17 12v3" />
+      <path d="M19 12v2" />
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+      <path d="M12 16V5" />
+      <path d="m7.5 9.5 4.5-4.5 4.5 4.5" />
+      <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </symbol>
+    <symbol id="i-cluster" viewBox="0 0 24 24">
+      <circle cx="5" cy="7" r="2.2" />
+      <circle cx="12" cy="5" r="2.2" />
+      <circle cx="19" cy="8" r="2.2" />
+      <circle cx="8" cy="17" r="2.2" />
+      <circle cx="16" cy="18" r="2.2" />
+      <path d="M7 7.7 10 6.2M14 5.8l3 1.4M6.8 8.8l1.7 6M17.3 9l-1.2 6.6M10.2 16.8h3.6" />
+    </symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24">
+      <rect x="6" y="4" width="12" height="17" rx="2" />
+      <rect x="9" y="2.5" width="6" height="3.5" rx="1.2" />
+      <path d="M9 11h6M9 15h6" />
+    </symbol>
+    <symbol id="i-service" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="5" rx="1.5" />
+      <rect x="3" y="15" width="18" height="5" rx="1.5" />
+      <path d="M8 9v6M16 9v6" />
+    </symbol>
+    <symbol id="i-access" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M4 12h16M12 4a13 13 0 0 1 0 16M12 4a13 13 0 0 0 0 16" />
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 3 5 6v6c0 4.7 3 7.9 7 9 4-1.1 7-4.3 7-9V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </symbol>
+    <symbol id="i-check-badge" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12 2.6 2.6L16 9.2" />
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" />
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+      <path d="M15.5 3.5a8.5 8.5 0 1 0 5 15.5A9 9 0 1 1 15.5 3.5Z" />
+    </symbol>
+    <symbol id="i-left" viewBox="0 0 24 24">
+      <path d="m15 18-6-6 6-6" />
+    </symbol>
+    <symbol id="i-right" viewBox="0 0 24 24">
+      <path d="m9 18 6-6-6-6" />
+    </symbol>
+  </svg>
+  <main class="deck">
+    <section class="slides" aria-live="polite">
+      <article class="slide active" data-title="Title">
+        <div class="slide-shell">
+          <span class="kicker">Spring Boot Deployment Guide</span>
+          <h1 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-cloud" /></svg></span>
+            <span>AWS ECS with Fargate</span>
+          </h1>
+          <p>
+            Step-by-step flow from local Spring Boot app to a public URL on AWS using Docker, ECR, ECS, and Fargate.
+          </p>
+          <div class="mono-flow">Spring Boot app
+-> Docker image
+-> Push image to Amazon ECR
+-> Create ECS Task Definition
+-> Create ECS Cluster
+-> Create ECS Service using Fargate
+-> Access app using Load Balancer URL</div>
+          <div class="flow-wrap">
+            <svg class="flow-svg" viewBox="0 0 1040 172" role="img" aria-label="Flow from Spring Boot app to ECS service behind load balancer">
+              <defs>
+                <linearGradient id="nodeGradA" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f97316" />
+                  <stop offset="100%" stop-color="#fb7185" />
+                </linearGradient>
+                <linearGradient id="nodeGradB" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0284c7" />
+                  <stop offset="100%" stop-color="#2563eb" />
+                </linearGradient>
+                <linearGradient id="nodeGradC" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0f766e" />
+                  <stop offset="100%" stop-color="#14b8a6" />
+                </linearGradient>
+                <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0L10 5L0 10Z" fill="#64748b" />
+                </marker>
+              </defs>
+
+              <rect x="18" y="40" rx="12" ry="12" width="178" height="92" fill="url(#nodeGradA)" opacity="0.95" />
+              <rect x="222" y="40" rx="12" ry="12" width="178" height="92" fill="url(#nodeGradB)" opacity="0.95" />
+              <rect x="426" y="40" rx="12" ry="12" width="178" height="92" fill="url(#nodeGradB)" opacity="0.95" />
+              <rect x="630" y="40" rx="12" ry="12" width="178" height="92" fill="url(#nodeGradC)" opacity="0.95" />
+              <rect x="834" y="40" rx="12" ry="12" width="188" height="92" fill="url(#nodeGradC)" opacity="0.95" />
+
+              <text x="107" y="74" text-anchor="middle" fill="#fff" font-size="14" font-family="Manrope" font-weight="700">Spring Boot App</text>
+              <text x="107" y="95" text-anchor="middle" fill="#fff" font-size="13" font-family="Manrope">Build JAR</text>
+
+              <text x="311" y="74" text-anchor="middle" fill="#fff" font-size="14" font-family="Manrope" font-weight="700">Docker Image</text>
+              <text x="311" y="95" text-anchor="middle" fill="#fff" font-size="13" font-family="Manrope">Local Build</text>
+
+              <text x="515" y="74" text-anchor="middle" fill="#fff" font-size="14" font-family="Manrope" font-weight="700">Amazon ECR</text>
+              <text x="515" y="95" text-anchor="middle" fill="#fff" font-size="13" font-family="Manrope">Push latest tag</text>
+
+              <text x="719" y="74" text-anchor="middle" fill="#fff" font-size="14" font-family="Manrope" font-weight="700">ECS + Fargate</text>
+              <text x="719" y="95" text-anchor="middle" fill="#fff" font-size="13" font-family="Manrope">Service task</text>
+
+              <text x="928" y="74" text-anchor="middle" fill="#fff" font-size="14" font-family="Manrope" font-weight="700">ALB URL</text>
+              <text x="928" y="95" text-anchor="middle" fill="#fff" font-size="13" font-family="Manrope">/api/hello</text>
+
+              <path d="M197 86H220" stroke="#64748b" stroke-width="3" marker-end="url(#arrowHead)" />
+              <path d="M401 86H424" stroke="#64748b" stroke-width="3" marker-end="url(#arrowHead)" />
+              <path d="M605 86H628" stroke="#64748b" stroke-width="3" marker-end="url(#arrowHead)" />
+              <path d="M809 86H832" stroke="#64748b" stroke-width="3" marker-end="url(#arrowHead)" />
+            </svg>
+          </div>
+          <div>
+            <span class="pill"><svg class="icon small"><use href="#i-db" /></svg>ECR</span>
+            <span class="pill"><svg class="icon small"><use href="#i-grid" /></svg>ECS</span>
+            <span class="pill"><svg class="icon small"><use href="#i-cloud" /></svg>Fargate</span>
+            <span class="pill"><svg class="icon small"><use href="#i-access" /></svg>ALB</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Why ECR">
+        <div class="slide-shell">
+          <span class="kicker">Before You Start</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-db" /></svg></span>
+            <span>Why We Need ECR</span>
+          </h2>
+          <p>
+            Local Docker images cannot be pulled directly by ECS. ECS tasks need a registry image URI, and Amazon ECR is the usual registry for AWS deployments.
+          </p>
+          <div class="box">
+            <h3>Deployment Pattern</h3>
+            <p>
+              Build jar locally -> build Docker image locally -> push image to ECR -> deploy ECS task/service from ECR image URI.
+            </p>
+          </div>
+          <div class="note">
+            Keep account ID and region consistent across all commands and console settings.
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 1">
+        <div class="slide-shell">
+          <span class="kicker">Step 1</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-box" /></svg></span>
+            <span>Build the Spring Boot Jar</span>
+          </h2>
+          <p>From your project folder, package the app:</p>
+          <pre><code>mvn clean package</code></pre>
+          <p>Expected artifact:</p>
+          <pre><code>target/ecs-fargate-demo-0.0.1-SNAPSHOT.jar</code></pre>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 2">
+        <div class="slide-shell">
+          <span class="kicker">Step 2</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-ship" /></svg></span>
+            <span>Build Local Docker Image</span>
+          </h2>
+          <p>Build image from your Dockerfile:</p>
+          <pre><code>docker build -t ecs-fargate-demo .</code></pre>
+          <p>Local image name:</p>
+          <pre><code>ecs-fargate-demo:latest</code></pre>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 3">
+        <div class="slide-shell">
+          <span class="kicker">Step 3</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-folder" /></svg></span>
+            <span>Create Amazon ECR Repository</span>
+          </h2>
+          <p>Set region and repo name (example: Mumbai):</p>
+          <pre><code>$REGION="ap-south-1"
+$REPO_NAME="ecs-fargate-demo"</code></pre>
+          <p>Create repository:</p>
+          <pre><code>aws ecr create-repository --repository-name ecs-fargate-demo --region ap-south-1</code></pre>
+          <p>Get AWS account ID:</p>
+          <pre><code>aws sts get-caller-identity --query Account --output text</code></pre>
+          <p>ECR image URI format:</p>
+          <pre><code>123456789012.dkr.ecr.ap-south-1.amazonaws.com/ecs-fargate-demo</code></pre>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 4">
+        <div class="slide-shell">
+          <span class="kicker">Step 4</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-key" /></svg></span>
+            <span>Login Docker to ECR</span>
+          </h2>
+          <p>Authenticate Docker client with ECR:</p>
+          <pre><code>aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-south-1.amazonaws.com</code></pre>
+          <div class="note">Replace <span class="inline-code">123456789012</span> with your actual AWS account ID.</div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 5 and 6">
+        <div class="slide-shell">
+          <span class="kicker">Step 5 and Step 6</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-upload" /></svg></span>
+            <span>Tag and Push Image to ECR</span>
+          </h2>
+          <p>Tag local image using ECR URI:</p>
+          <pre><code>docker tag ecs-fargate-demo:latest 123456789012.dkr.ecr.ap-south-1.amazonaws.com/ecs-fargate-demo:latest</code></pre>
+          <p>Push image:</p>
+          <pre><code>docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/ecs-fargate-demo:latest</code></pre>
+          <p>Your app image is now available for ECS tasks.</p>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 7">
+        <div class="slide-shell">
+          <span class="kicker">Step 7</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-cluster" /></svg></span>
+            <span>Create ECS Cluster</span>
+          </h2>
+          <ol class="list">
+            <li>Go to Amazon ECS in AWS Console.</li>
+            <li>Open Clusters and click Create cluster.</li>
+            <li>Cluster name: <span class="inline-code">ecs-fargate-demo-cluster</span>.</li>
+            <li>Infrastructure: choose AWS Fargate.</li>
+            <li>Create cluster.</li>
+          </ol>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 8">
+        <div class="slide-shell">
+          <span class="kicker">Step 8</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-clipboard" /></svg></span>
+            <span>Create ECS Task Definition</span>
+          </h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Task definition family</td>
+                <td>ecs-fargate-demo-task</td>
+              </tr>
+              <tr>
+                <td>Launch type</td>
+                <td>AWS Fargate</td>
+              </tr>
+              <tr>
+                <td>OS</td>
+                <td>Linux</td>
+              </tr>
+              <tr>
+                <td>CPU / Memory</td>
+                <td>0.25 vCPU / 0.5 GB</td>
+              </tr>
+              <tr>
+                <td>Network mode</td>
+                <td>awsvpc</td>
+              </tr>
+              <tr>
+                <td>Container name</td>
+                <td>ecs-fargate-demo</td>
+              </tr>
+              <tr>
+                <td>Image URI</td>
+                <td>123456789012.dkr.ecr.ap-south-1.amazonaws.com/ecs-fargate-demo:latest</td>
+              </tr>
+              <tr>
+                <td>Container port</td>
+                <td>8080 (TCP)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note">Enable CloudWatch logs in container settings for easier debugging.</div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Step 9">
+        <div class="slide-shell">
+          <span class="kicker">Step 9</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-service" /></svg></span>
+            <span>Create ECS Service (Fargate)</span>
+          </h2>
+          <div class="grid-2">
+            <div class="box">
+              <h3>Service Basics</h3>
+              <ol class="list">
+                <li>Cluster: <span class="inline-code">ecs-fargate-demo-cluster</span></li>
+                <li>Launch type: Fargate</li>
+                <li>Task definition: <span class="inline-code">ecs-fargate-demo-task</span></li>
+                <li>Service name: <span class="inline-code">ecs-fargate-demo-service</span></li>
+                <li>Desired tasks: 1</li>
+              </ol>
+            </div>
+            <div class="box">
+              <h3>Networking</h3>
+              <ol class="list">
+                <li>VPC: default VPC for demo</li>
+                <li>Subnets: select 2 public subnets</li>
+                <li>Public IP: Enabled (simple demo path)</li>
+                <li>Security groups: allow traffic as needed</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Access Options">
+        <div class="slide-shell">
+          <span class="kicker">Accessing the App</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-access" /></svg></span>
+            <span>Simple Demo vs Recommended Setup</span>
+          </h2>
+          <div class="grid-2">
+            <div class="box">
+              <h3>Simple Demo (Public Task IP)</h3>
+              <ol class="list">
+                <li>Open ECS service -> running task.</li>
+                <li>Copy the task public IP.</li>
+                <li>Open <span class="inline-code">http://PUBLIC_IP:8080/api/hello</span></li>
+              </ol>
+              <pre><code>http://13.232.10.25:8080/api/hello</code></pre>
+            </div>
+            <div class="box">
+              <h3>Recommended (Application Load Balancer)</h3>
+              <ol class="list">
+                <li>LB type: Application Load Balancer</li>
+                <li>Listener: HTTP 80</li>
+                <li>Target group: HTTP 8080</li>
+                <li>Health check path: <span class="inline-code">/actuator/health</span></li>
+                <li>ECS service must be attached to this target group</li>
+              </ol>
+              <pre><code>http://ecs-demo-alb-123456.ap-south-1.elb.amazonaws.com/api/hello</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="ALB Bridge">
+        <div class="slide-shell">
+          <span class="kicker">Important Missing Bridge</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-service" /></svg></span>
+            <span>How ALB Finds the ECS Task</span>
+          </h2>
+          <p>
+            The target group does not know ECS task IPs by itself. ECS registers task private IPs only when the ECS service is connected to the target group.
+          </p>
+          <div class="mono-flow">ECS Service starts a Fargate task
+-> Task receives a private IP, for example 10.0.2.55
+-> ECS service registers 10.0.2.55:8080 in the target group
+-> ALB forwards http://ALB-DNS/api/hello to 10.0.2.55:8080/api/hello</div>
+          <div class="note">
+            For Fargate, the target group target type must be <span class="inline-code">IP</span>, because Fargate tasks are registered by private IP address.
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Attach ALB">
+        <div class="slide-shell">
+          <span class="kicker">ECS Service Load Balancing</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-access" /></svg></span>
+            <span>Attach ECS Service to ALB</span>
+          </h2>
+          <div class="grid-2">
+            <div class="box">
+              <h3>Console Steps</h3>
+              <ol class="list">
+                <li>Open ECS -> Cluster -> Services.</li>
+                <li>Create a new service if the current service was created without ALB.</li>
+                <li>Use the same task definition.</li>
+                <li>In Load balancing, choose Application Load Balancer.</li>
+                <li>Select ALB listener <span class="inline-code">HTTP:80</span>.</li>
+                <li>Select the target group using <span class="inline-code">HTTP:8080</span>.</li>
+              </ol>
+            </div>
+            <div class="box">
+              <h3>Container Mapping</h3>
+              <ol class="list">
+                <li>Container name: <span class="inline-code">ecs-fargate-demo</span></li>
+                <li>Container port: <span class="inline-code">8080</span></li>
+                <li>Health check grace period: <span class="inline-code">60</span> seconds</li>
+                <li>After service starts, check EC2 -> Target Groups -> Targets.</li>
+                <li>Wait until the registered task IP is <span class="inline-code">Healthy</span>.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="note">
+            Without this ECS service load balancing step, the ALB and target group can exist but still return 503 because no healthy ECS task is registered.
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Security and Concepts">
+        <div class="slide-shell">
+          <span class="kicker">Security and Core Terms</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-shield" /></svg></span>
+            <span>Security Group Rules + ECS Concepts</span>
+          </h2>
+          <div class="grid-2">
+            <div class="box">
+              <h3>Security Group Rules</h3>
+              <ol class="list">
+                <li>Without ALB: allow inbound 8080 from your IP.</li>
+                <li>With ALB: ALB SG allows inbound 80 from internet.</li>
+                <li>With ALB: ECS task SG allows inbound 8080 only from ALB SG.</li>
+              </ol>
+            </div>
+            <div class="box">
+              <h3>ECS Terms</h3>
+              <ol class="list">
+                <li>ECR: stores Docker images.</li>
+                <li>Cluster: logical environment where tasks run.</li>
+                <li>Task definition: image + CPU/memory + port blueprint.</li>
+                <li>Task: one running container copy.</li>
+                <li>Service: keeps desired number of tasks running.</li>
+                <li>Fargate: serverless compute for containers.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide" data-title="Project Values">
+        <div class="slide-shell">
+          <span class="kicker">Project Values</span>
+          <h2 class="title-line">
+            <span class="title-chip"><svg class="icon"><use href="#i-check-badge" /></svg></span>
+            <span>Final Values for This Project</span>
+          </h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>App endpoint</td>
+                <td>/api/hello</td>
+              </tr>
+              <tr>
+                <td>Health check path</td>
+                <td>/actuator/health</td>
+              </tr>
+              <tr>
+                <td>Image URI</td>
+                <td>123456789012.dkr.ecr.ap-south-1.amazonaws.com/ecs-fargate-demo:latest</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="links">
+            Sources:
+            <br />
+            <a href="https://docs.aws.amazon.com/cli/latest/reference/ecr/get-login-password.html" target="_blank" rel="noreferrer">AWS CLI `get-login-password`</a>
+            <br />
+            <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html" target="_blank" rel="noreferrer">Push Docker image to Amazon ECR</a>
+            <br />
+            <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html" target="_blank" rel="noreferrer">ECS task definition parameters</a>
+            <br />
+            <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html" target="_blank" rel="noreferrer">Fargate task and service requirements</a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="controls">
+      <div class="buttons">
+        <button id="prev" class="btn" type="button" aria-label="Previous slide">
+          <svg class="icon"><use href="#i-left" /></svg>Prev
+        </button>
+        <button id="next" class="btn" type="button" aria-label="Next slide">
+          <svg class="icon"><use href="#i-right" /></svg>Next
+        </button>
+        <button id="themeToggle" class="btn icon-btn" type="button" aria-label="Switch theme">
+          <svg class="icon"><use id="themeIconUse" href="#i-moon" /></svg>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="bar" class="progress-bar"></div>
+      </div>
+      <div id="count" class="status">1 / 14</div>
+    </footer>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const prevBtn = document.getElementById("prev");
+    const nextBtn = document.getElementById("next");
+    const themeToggle = document.getElementById("themeToggle");
+    const themeLabel = document.getElementById("themeLabel");
+    const themeIconUse = document.getElementById("themeIconUse");
+    const count = document.getElementById("count");
+    const bar = document.getElementById("bar");
+    const themeStorageKey = "ecs_fargate_deck_theme";
+
+    let index = 0;
+
+    function show(nextIndex) {
+      index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === index);
+      });
+      count.textContent = `${index + 1} / ${slides.length}`;
+      bar.style.width = `${((index + 1) / slides.length) * 100}%`;
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === slides.length - 1;
+      document.title = `${slides[index].dataset.title} | ECS Fargate Deployment`;
+    }
+
+    function updateThemeButton(theme) {
+      const nextTheme = theme === "dark" ? "light" : "dark";
+      const nextIcon = nextTheme === "dark" ? "#i-moon" : "#i-sun";
+      themeLabel.textContent = nextTheme === "dark" ? "Dark" : "Light";
+      themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
+      themeIconUse.setAttribute("href", nextIcon);
+      themeIconUse.setAttribute("xlink:href", nextIcon);
+    }
+
+    function setTheme(theme, persist) {
+      root.setAttribute("data-theme", theme);
+      updateThemeButton(theme);
+      if (persist) {
+        try {
+          localStorage.setItem(themeStorageKey, theme);
+        } catch (error) {
+          // Ignore storage write failures in restricted environments.
+        }
+      }
+    }
+
+    function initTheme() {
+      let savedTheme = null;
+      try {
+        savedTheme = localStorage.getItem(themeStorageKey);
+      } catch (error) {
+        savedTheme = null;
+      }
+
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setTheme(savedTheme, false);
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(prefersDark ? "dark" : "light", false);
+      }
+    }
+
+    prevBtn.addEventListener("click", () => show(index - 1));
+    nextBtn.addEventListener("click", () => show(index + 1));
+    themeToggle.addEventListener("click", () => {
+      const currentTheme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      setTheme(currentTheme === "dark" ? "light" : "dark", true);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown") {
+        show(index + 1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        show(index - 1);
+      }
+      if (event.key === "Home") {
+        show(0);
+      }
+      if (event.key === "End") {
+        show(slides.length - 1);
+      }
+      if (event.key.toLowerCase() === "d") {
+        const currentTheme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        setTheme(currentTheme === "dark" ? "light" : "dark", true);
+      }
+    });
+
+    initTheme();
+    show(0);
+  </script>
+</body>
+</html>
