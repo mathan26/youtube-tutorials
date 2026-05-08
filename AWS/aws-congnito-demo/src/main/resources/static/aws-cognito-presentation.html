@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Cognito Presentation</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: rgba(255, 252, 247, 0.88);
+      --ink: #1f2937;
+      --muted: #5b6472;
+      --accent: #d97706;
+      --accent-soft: #fed7aa;
+      --line: rgba(31, 41, 55, 0.12);
+      --shadow: 0 24px 70px rgba(80, 52, 22, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, 0.35), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(14, 116, 144, 0.20), transparent 28%),
+        linear-gradient(135deg, #f8f1e7 0%, #f4efe7 48%, #ebe3d6 100%);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slides {
+      display: flex;
+      width: 300vw;
+      height: 100vh;
+      transition: transform 0.45s ease;
+    }
+
+    .slide {
+      width: 100vw;
+      height: 100vh;
+      padding: 40px 48px 104px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .eyebrow {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2 {
+      line-height: 1.05;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 5vw, 5rem);
+      max-width: 12ch;
+    }
+
+    h2 {
+      font-size: clamp(2.2rem, 4vw, 4rem);
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.5vw, 1.2rem);
+      line-height: 1.6;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 24px;
+      min-height: 0;
+    }
+
+    .panel,
+    .hero-card,
+    .diagram-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-card {
+      padding: 28px;
+      display: grid;
+      align-content: space-between;
+      gap: 20px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .use-cases {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(217, 119, 6, 0.15);
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .card span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .feature-list {
+      padding: 28px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .feature {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .feature span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .diagram-layout {
+      display: grid;
+      grid-template-columns: 1.25fr 0.8fr;
+      gap: 24px;
+    }
+
+    .diagram-card {
+      padding: 26px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .diagram-flow {
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      align-items: center;
+    }
+
+    .flow-box {
+      padding: 18px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      min-height: 100px;
+    }
+
+    .flow-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .flow-box span {
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .arrow {
+      text-align: center;
+      color: var(--accent);
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .timeline {
+      padding: 28px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .timeline-step {
+      padding: 16px 18px;
+      border-left: 4px solid var(--accent);
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 0 18px 18px 0;
+    }
+
+    .timeline-step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.98rem;
+    }
+
+    .timeline-step span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.94rem;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .controls {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      background: #1f2937;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 12px 28px rgba(31, 41, 55, 0.18);
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+
+    .dot.active {
+      background: var(--accent);
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .deck,
+      .slides {
+        width: 100%;
+        height: auto;
+      }
+
+      .slides {
+        display: block;
+        transform: none !important;
+      }
+
+      .slide {
+        width: 100%;
+        min-height: 100vh;
+        height: auto;
+        padding: 28px 20px 80px;
+      }
+
+      .panel-grid,
+      .diagram-layout,
+      .flow-row,
+      .use-cases {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+      }
+
+      .controls {
+        position: fixed;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <div class="slides" id="slides">
+      <section class="slide">
+        <header>
+          <div class="eyebrow">Slide 1</div>
+          <h1>What Is AWS Cognito?</h1>
+          <p class="subtitle">
+            AWS Cognito is Amazon's identity service for web and mobile apps. It handles sign-up, sign-in,
+            user profiles, token generation, and secure access so our application can focus on business logic.
+          </p>
+        </header>
+
+        <div class="panel-grid">
+          <article class="hero-card">
+            <div class="pill-row">
+              <span class="pill">User Authentication</span>
+              <span class="pill">JWT Tokens</span>
+              <span class="pill">Hosted UI</span>
+              <span class="pill">SSO Ready</span>
+            </div>
+
+            <div class="use-cases">
+              <div class="card">
+                <strong>User Pool</strong>
+                <span>Stores users, passwords, profile attributes, groups, and sign-in policies in AWS.</span>
+              </div>
+              <div class="card">
+                <strong>Hosted UI</strong>
+                <span>Provides a ready-made login page so we do not need to build authentication screens from scratch.</span>
+              </div>
+              <div class="card">
+                <strong>OAuth2 + OIDC</strong>
+                <span>Supports authorization code flow for browsers and standards-based login across modern apps.</span>
+              </div>
+              <div class="card">
+                <strong>API Security</strong>
+                <span>Issues access tokens that backends can validate before serving protected endpoints.</span>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel feature-list">
+            <div class="feature">
+              <strong>Why teams use it</strong>
+              <span>It reduces custom auth code, centralizes user identity, and integrates cleanly with backend APIs.</span>
+            </div>
+            <div class="feature">
+              <strong>Common use cases</strong>
+              <span>Customer portals, admin dashboards, mobile app login, single sign-on, and API authorization.</span>
+            </div>
+            <div class="feature">
+              <strong>What it returns</strong>
+              <span>ID tokens for profile data, access tokens for APIs, and refresh tokens for longer sessions.</span>
+            </div>
+            <div class="feature">
+              <strong>Fit for this repo</strong>
+              <span>This project uses Cognito Hosted UI for browser login and JWT validation for Bearer-token API access.</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="footer">
+          <span>AWS Cognito overview for this Spring Boot demo</span>
+          <span>Use left/right arrow keys or buttons to navigate</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header>
+          <div class="eyebrow">Slide 2</div>
+          <h2>Architecture Of This Project</h2>
+          <p class="subtitle">
+            This application combines Spring Security OAuth2 Login and Resource Server support so the same backend
+            can handle browser-based Cognito login and direct JWT-based API authentication.
+          </p>
+        </header>
+
+        <div class="diagram-layout">
+          <article class="diagram-card">
+            <div class="diagram-flow">
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>Browser / API Client</strong>
+                  <span>Calls `/api/orders` or `/public/health`.</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-box">
+                  <strong>Spring Security</strong>
+                  <span>`SecurityConfig` protects `/api/**` and allows `/public/**`.</span>
+                </div>
+              </div>
+
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>Cognito Hosted UI</strong>
+                  <span>Used when the request is from a browser without an authenticated session.</span>
+                </div>
+                <div class="arrow">←→</div>
+                <div class="flow-box">
+                  <strong>AWS Cognito User Pool</strong>
+                  <span>Authenticates the user and issues OAuth2 / OIDC tokens.</span>
+                </div>
+              </div>
+
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>JWT Validation</strong>
+                  <span>Resource Server validates Bearer tokens using the configured issuer URI.</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-box">
+                  <strong>`OrderController`</strong>
+                  <span>Reads `email`, `cognito:username`, or `sub` and responds with user-specific data.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel timeline">
+            <div class="timeline-step">
+              <strong>1. Public access</strong>
+              <span>`/public/health` is open and returns a simple status response.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>2. Browser login flow</strong>
+              <span>Unauthenticated HTML requests are redirected to `/oauth2/authorization/cognito`, then to Cognito Hosted UI.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>3. Token exchange</strong>
+              <span>After login, Spring receives the authorization code and creates the authenticated user session.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>4. API token flow</strong>
+              <span>Clients can also send `Authorization: Bearer &lt;token&gt;` and access the same protected API.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>5. Logout</strong>
+              <span>`CognitoLogoutSuccessHandler` redirects to Cognito `/logout` so both local and Hosted UI sessions are cleared.</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="footer">
+          <span>Key config: `issuer-uri`, OAuth2 client registration, JWT resource server, custom logout handler</span>
+          <span>Project reference: Spring Boot + Spring Security + AWS Cognito</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <header>
+          <div class="eyebrow">Slide 3</div>
+          <h2>How Hosted UI Auth Works Behind The Scenes</h2>
+          <p class="subtitle">
+            Cognito Hosted UI handles the login screen, but Spring Security coordinates the redirects,
+            exchanges the authorization code for tokens, and creates the local authenticated session.
+          </p>
+        </header>
+
+        <div class="diagram-layout">
+          <article class="diagram-card">
+            <div class="diagram-flow">
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>1. Protected request</strong>
+                  <span>The browser calls `/api/orders` without an existing session.</span>
+                </div>
+                <div class="arrow">-&gt;</div>
+                <div class="flow-box">
+                  <strong>2. Spring entry point</strong>
+                  <span>`SecurityConfig` redirects HTML requests to `/oauth2/authorization/cognito`.</span>
+                </div>
+              </div>
+
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>3. Hosted UI redirect</strong>
+                  <span>Spring builds the OAuth2 authorize request and sends the browser to Cognito Hosted UI.</span>
+                </div>
+                <div class="arrow">-&gt;</div>
+                <div class="flow-box">
+                  <strong>4. User login</strong>
+                  <span>The user signs in on Cognito, not inside the Spring Boot application.</span>
+                </div>
+              </div>
+
+              <div class="flow-row">
+                <div class="flow-box">
+                  <strong>5. Callback with code</strong>
+                  <span>Cognito redirects to `/login/oauth2/code/cognito?code=...&amp;state=...`.</span>
+                </div>
+                <div class="arrow">-&gt;</div>
+                <div class="flow-box">
+                  <strong>6. Backend token exchange</strong>
+                  <span>Spring uses the client ID and secret to exchange the code for ID, access, and refresh tokens.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel timeline">
+            <div class="timeline-step">
+              <strong>7. Local session is created</strong>
+              <span>Spring validates the tokens, builds an `OidcUser`, and stores the authenticated session in the app.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>8. Controller reads claims</strong>
+              <span>`OrderController` can resolve `email`, `preferred_username`, `cognito:username`, or `sub` from the authenticated principal.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>9. API mode also works</strong>
+              <span>For Bearer-token requests, Spring skips redirects and validates the JWT directly using Cognito issuer metadata.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>10. Logout has two parts</strong>
+              <span>The app clears the local session, then `CognitoLogoutSuccessHandler` redirects to Cognito `/logout` to clear the Hosted UI session too.</span>
+            </div>
+            <div class="timeline-step">
+              <strong>Main idea</strong>
+              <span>The browser sees redirects, the backend handles the secure token exchange, and Cognito remains the identity provider.</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="footer">
+          <span>Flow: browser redirect, authorization code callback, backend token exchange, local Spring session</span>
+          <span>Based on this repo's `oauth2Login` and resource server configuration</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="controls">
+      <button class="secondary" id="prev">Prev</button>
+      <div class="dots" aria-label="Slide position">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      <button id="next">Next</button>
+    </div>
+  </div>
+
+  <script>
+    const slides = document.getElementById("slides");
+    const dots = Array.from(document.querySelectorAll(".dot"));
+    const totalSlides = 3;
+    let currentIndex = 0;
+
+    function updateSlides() {
+      if (window.innerWidth > 980) {
+        slides.style.transform = `translateX(-${currentIndex * 100}vw)`;
+      } else {
+        slides.style.transform = "none";
+      }
+
+      dots.forEach((dot, index) => {
+        dot.classList.toggle("active", index === currentIndex);
+      });
+    }
+
+    function goToSlide(index) {
+      currentIndex = (index + totalSlides) % totalSlides;
+      updateSlides();
+    }
+
+    document.getElementById("prev").addEventListener("click", () => goToSlide(currentIndex - 1));
+    document.getElementById("next").addEventListener("click", () => goToSlide(currentIndex + 1));
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight") {
+        goToSlide(currentIndex + 1);
+      }
+      if (event.key === "ArrowLeft") {
+        goToSlide(currentIndex - 1);
+      }
+    });
+
+    window.addEventListener("resize", updateSlides);
+    updateSlides();
+  </script>
+</body>
+</html>

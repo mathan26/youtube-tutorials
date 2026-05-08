@@ -1,0 +1,30 @@
+app:
+  cognito:
+    region: ${COGNITO_REGION:PASTE YOUR REGION}
+    user-pool-id: ${COGNITO_USER_POOL_ID:PASTE YOUR USER POOL ID}
+    client-id: ${COGNITO_CLIENT_ID:PASTE YOUR CLIENT ID}
+    client-secret: ${COGNITO_CLIENT_SECRET:PASTE YOUR CLIENT SECRET}
+
+spring:
+  application:
+    name: aws-congnito-demo
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.${app.cognito.region}.amazonaws.com/${app.cognito.user-pool-id}
+      client:
+        registration:
+          cognito:
+            provider: cognito
+            client-id: ${app.cognito.client-id}
+            client-secret: ${app.cognito.client-secret}
+            scope:
+              - openid
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            authorization-grant-type: authorization_code
+        provider:
+          cognito:
+            issuer-uri: https://cognito-idp.${app.cognito.region}.amazonaws.com/${app.cognito.user-pool-id}
